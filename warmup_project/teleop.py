@@ -9,7 +9,7 @@ import select
 import sys
 import termios
 
-DIRECTION = {"w": 0.3, "a": 1.0, "s": -0.3, "d": -1.0}
+DIRECTION = {"w": 0.3, "a": 1.0, "s": -0.3, "d": -1.0, "x": 0.0}
 
 
 class Teleop(Node):
@@ -41,6 +41,9 @@ class Teleop(Node):
                 msg.angular.z = DIRECTION[key]
             elif key == "w" or key == "s":
                 msg.linear.x = DIRECTION[key]
+            elif key == "x":
+                msg.linear.x = DIRECTION[key]
+                msg.angular.z = DIRECTION[key]
 
         self.vel_pub.publish(msg)
 
