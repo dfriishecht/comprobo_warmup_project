@@ -20,7 +20,8 @@ setup(
     entry_points={
         "console_scripts": [
             "send_marker = warmup_project.send_marker:main",
-            'teleop = warmup_project.teleop:main'
+            "teleop = warmup_project.teleop:main",
+            "draw_square = warmup_project.draw_square:main",
         ],
     },
 )
