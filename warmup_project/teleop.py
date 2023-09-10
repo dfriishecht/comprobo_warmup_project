@@ -1,4 +1,6 @@
-#!/usr/bin/env python3
+"""
+Module for creating a teleop ros2 node.
+"""
 
 import rclpy
 from rclpy.node import Node
@@ -13,6 +15,20 @@ DIRECTION = {"w": 0.3, "a": 1.0, "s": -0.3, "d": -1.0, "x": 0.0}
 
 
 class Teleop(Node):
+    """
+    A Teleop node to control a Neato robot with user input.
+
+    Attributes:
+        vel_pud - publisher node
+            A node which publishes the 'cmd_vel' topic.
+        timer - a timer node
+            A node which governs the node's loop rate.
+
+    Methods:
+        run_loop():
+            Executes the Node's runtime loop.
+    """
+
     def __init__(self):
         super().__init__("teleop_node")
         self.vel_pub = self.create_publisher(Twist, "cmd_vel", 10)
