@@ -19,7 +19,7 @@ class Teleop(Node):
     A Teleop node to control a Neato robot with user input.
 
     Attributes:
-        vel_pud - publisher node
+        vel_pub - publisher node
             A node which publishes the 'cmd_vel' topic.
         timer - a timer node
             A node which governs the node's loop rate.
@@ -34,7 +34,7 @@ class Teleop(Node):
         Constructs all required attributes for the Teleop Node.
 
         Parameters:
-            vel_pud - publisher node
+            vel_pub - publisher node
                 A node which publishes the 'cmd_vel' topic.
             timer - a timer node
                 A node which governs the node's loop rate.
