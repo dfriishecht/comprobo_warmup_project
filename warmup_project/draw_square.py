@@ -51,7 +51,7 @@ class DriveSquare(Node):
             Args:
                 msg - ros2 Odom topic
         run_loop():
-                Executes the Node runtime loop and publishes the "cmd_vel" topic
+                Executes the Node runtime loop and publishes the "cmd_vel" topic.
 
     """
 
@@ -100,9 +100,25 @@ class DriveSquare(Node):
         self.done = False
 
     def get_angle(self, w):
+        """
+        Returns the current angular orientation of the Neato.
+            Args:
+                w - float
+                    A scalar value representing the Neato's rotation about
+                    a vector perpendicular to the ground.
+            Returns:
+                    The scalar w converted to a degree value.
+        """
         return rad2deg(acos(w) * 2)
 
     def square_draw(self, msg):
+        """
+        Based on the current position of the Neato, as well as it's previous
+            rotation, will set the Neato's linear and angular velocity to continue
+            driving in a square.
+            Args:
+                msg - ros2 Odom topic
+        """
         crnt_coord = [msg.pose.pose.position.x, msg.pose.pose.position.y]
         crnt_angle = self.get_angle(msg.pose.pose.orientation.w)
 
@@ -129,6 +145,9 @@ class DriveSquare(Node):
                 self.lin_goal_reached = False
 
     def run_loop(self):
+        """
+        Executes the Node runtime loop and publishes the "cmd_vel" topic
+        """
         msg = Twist()
         msg.linear.x = self.lin_vel
         msg.angular.z = self.ang_vel
@@ -137,6 +156,9 @@ class DriveSquare(Node):
 
 
 def main():
+    """
+    Initializes and publishes the DriveSquare node.
+    """
     rclpy.init()
     square_publisher = DriveSquare()
     rclpy.spin(square_publisher)
