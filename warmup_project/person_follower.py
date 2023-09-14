@@ -22,13 +22,14 @@ class PersonFollow(Node):
         timer_period = 0.1
         self.timer = self.create_timer(timer_period, callback=self.run_loop)
 
+        self.current_angle = None
         self.angle_to_turn = None
         self.following_distance = 1
         self.reach_goal = None
 
     def get_angle(self, msg):
         w = msg.pose.pose.orientation.w
-        self.crnt_angle = rad2deg(acos(w) * 2)
+        self.current_angle = rad2deg(acos(w) * 2)
 
     def group_clusters(self, dists, max_gap):
         """
@@ -98,20 +99,23 @@ class PersonFollow(Node):
         # print(person)
 
         # The robot should turn towards the middle of the object, so `angle_to_turn` is the median angle from the list `person`
-        self.angle_to_turn = person[len(person) // 2][0]
+        if len(person) > 0:
+            self.angle_to_turn = person[len(person) // 2][0]
 
-        if person[len(person) // 2][1] <= self.following_distance:
-            self.reach_goal = True
+            if person[len(person) // 2][1] <= self.following_distance:
+                self.reach_goal = True
+            else:
+                self.reach_goal = False
         else:
-            self.reach_goal = False
+            self.angle_to_turn = 0
 
     def run_loop(self):
         msg = Twist()
         if self.angle_to_turn:  # If not None
             if self.angle_to_turn >= 315:  # clockwise
-                msg.angular.z = -0.3
+                msg.angular.z = -0.6 * (1 / (self.angle_to_turn - 270) / 45)
             elif self.angle_to_turn <= 45:  # counterclockwise
-                msg.angular.z = 0.3
+                msg.angular.z = 0.6 * (self.angle_to_turn / 45)
         if self.reach_goal is False:
             msg.linear.x = 0.2
         self.vel_pub.publish(msg)
