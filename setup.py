@@ -22,6 +22,7 @@ setup(
             "send_marker = warmup_project.send_marker:main",
             "teleop = warmup_project.teleop:main",
             "draw_square = warmup_project.draw_square:main",
+            "person_follower = warmup_project.person_follower:main",
         ],
     },
 )
