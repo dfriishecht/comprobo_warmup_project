@@ -90,6 +90,7 @@ class ObstacleAvoider(Node):
     def rotate_reset(self):
         if self.current_angle <= 1 + self.goal_angle:
             self.ang_vel = 0.0
+            self.turn_reset = True
 
     def obstacle_parallel(self):
         if self.ang_direction == 1:
@@ -99,7 +100,7 @@ class ObstacleAvoider(Node):
         if parallel_angle > self.obstacle_threshold:
             self.ang_vel = -0.6
             self.lin_vel = 0.05
-            self.goal_angle = 0.0
+            self.goal_angle = 5.0
             self.avoid_obstacle = True
         else:
             self.lin_vel = 0.3
@@ -112,31 +113,33 @@ class ObstacleAvoider(Node):
         """
         msg = Twist()
         # first check in front of neato
-        if self.obstacle_detect is False:
+        if self.obstacle_detect is False:  # self.obstacle_detect is false
             self.check_front_obstacle()
             self.lin_vel = 0.3
-        if self.obstacle_detect is True:
+        if self.obstacle_detect is True:  # self.obstacle_detect is true
             self.lin_vel = 0.0
-            self.rotated = False
-            if self.task_finish is True:
+            self.rotated = False  # self.rotated is false
+            if self.task_finish is True:  # self.task_finished is initially true
                 self.compare_side_dist()
                 print(self.ang_direction)
-                self.task_finish = False
+                self.task_finish = False  # self.task_finish is set to false. Not needed to initialize above lines.
 
             if self.task_finish is False:
-                if self.avoid_obstacle is False:
+                if self.avoid_obstacle is False:  # self.avoid_obstacle is false
 
-                    if self.rotated is False:
-                        self.rotate()
+                    if self.rotated is False:  # self.rotated is initially False
+                        # self.rotate()  # self.rotated is set to True -> needs to be reset at bottom
+                        self.ang_vel = 0.3 * self.ang_direction
+                        # sleep(5.2)
                     if self.current_angle >= self.goal_angle:
                         self.lin_vel = 0.3
                         print("i have turned")
-                        self.obstacle_parallel()
-                else:
-                    if self.turn_reset is False:
-                        self.rotate_reset()
-                        self.lin_vel = 0.3
-                        self.task_finish = True
+                        self.obstacle_parallel()  # once done, self.avoid_obstacle is set to True, needs to get reset at bottom
+                elif self.avoid_obstacle is True and self.turn_reset is False:
+                    self.rotate_reset()
+                    self.lin_vel = 0.3
+                if self.turn_reset is True:
+                    self.__init__()
 
         msg.linear.x = self.lin_vel
         msg.angular.z = self.ang_vel
