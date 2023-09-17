@@ -98,7 +98,7 @@ class ObstacleAvoider(Node):
         else:
             parallel_angle = self.dists["deg90"]
         if parallel_angle > self.obstacle_threshold:
-            self.ang_vel = -0.6
+            self.ang_vel = -0.6 * self.ang_direction
             self.lin_vel = 0.05
             self.goal_angle = 5.0
             self.avoid_obstacle = True
@@ -130,7 +130,6 @@ class ObstacleAvoider(Node):
                     if self.rotated is False:  # self.rotated is initially False
                         # self.rotate()  # self.rotated is set to True -> needs to be reset at bottom
                         self.ang_vel = 0.3 * self.ang_direction
-                        # sleep(5.2)
                     if self.current_angle >= self.goal_angle:
                         self.lin_vel = 0.3
                         print("i have turned")
