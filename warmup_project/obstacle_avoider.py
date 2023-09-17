@@ -36,12 +36,14 @@ class ObstacleAvoider(Node):
         self.obstacle_threshold = 1.0
         self.ang_direction = None
         self.task_finish = True
+        self.goal_angle = 90
 
     def get_angle(self, msg):
         """
         Get current neato angle
         """
         self.current_angle = rad2deg(acos(msg.pose.pose.orientation.w) * 2)
+        print(self.current_angle)
 
     def get_laser(self, msg):
         """
@@ -55,7 +57,7 @@ class ObstacleAvoider(Node):
 
     def check_front_obstacle(self):
         """
-        Checks for obstacle in front of neato
+        Check for obstacle in front of neato
         """
         if self.dists["deg0"] > self.obstacle_threshold or self.dists["deg0"] == 0.0:
             self.obstacle_detect = False
@@ -64,10 +66,19 @@ class ObstacleAvoider(Node):
             self.obstacle_detect = True
 
     def compare_side_dist(self):
+        """
+        Check for obstacle to the left and right of the neato
+        """
         if self.dists["deg90"] >= self.dists["deg270"]:
             self.ang_direction = 1
         else:
             self.ang_direction = -1
+
+    def rotate(self):
+        if self.current_angle >= self.goal_angle:
+            self.ang_vel = 0.0
+        else:
+            self.ang_vel = 0.3 * self.ang_direction
 
     def run_loop(self):
         """
@@ -79,15 +90,13 @@ class ObstacleAvoider(Node):
             self.check_front_obstacle()
         if self.obstacle_detect is False:
             self.lin_vel = 0.3
-        # if there is an obstacle, check side dists
         if self.obstacle_detect:
             self.lin_vel = 0.0
-            self.compare_side_dist()
+            if self.task_finish is True:
+                self.compare_side_dist()
             self.task_finish = False
-        while self.task_finish is False:
-            self.ang_vel = 0.3 * self.ang_direction
-            msg.angular.z = self.ang_vel
-            self.vel_pub.publish(msg)
+        if self.task_finish is False:
+            self.rotate()
 
         msg.linear.x = self.lin_vel
         msg.angular.z = self.ang_vel
