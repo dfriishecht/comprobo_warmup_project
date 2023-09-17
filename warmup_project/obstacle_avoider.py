@@ -34,6 +34,8 @@ class ObstacleAvoider(Node):
         self.lin_vel = 0.0
         self.ang_vel = 0.0
         self.obstacle_threshold = 1.0
+        self.ang_direction = None
+        self.task_finish = True
 
     def get_angle(self, msg):
         """
@@ -57,18 +59,38 @@ class ObstacleAvoider(Node):
         """
         if self.dists["deg0"] > self.obstacle_threshold or self.dists["deg0"] == 0.0:
             self.obstacle_detect = False
-            self.lin_vel = 0.3
+
         else:
             self.obstacle_detect = True
-            self.lin_vel = 0.0
+
+    def compare_side_dist(self):
+        if self.dists["deg90"] >= self.dists["deg270"]:
+            self.ang_direction = 1
+        else:
+            self.ang_direction = -1
 
     def run_loop(self):
         """
         Executes the Node runtime loop and publishes the "cmd_vel" topic
         """
         msg = Twist()
-        self.check_front_obstacle()
+        # first check in front of neato
+        if self.task_finish is True:
+            self.check_front_obstacle()
+        if self.obstacle_detect is False:
+            self.lin_vel = 0.3
+        # if there is an obstacle, check side dists
+        if self.obstacle_detect:
+            self.lin_vel = 0.0
+            self.compare_side_dist()
+            self.task_finish = False
+        while self.task_finish is False:
+            self.ang_vel = 0.3 * self.ang_direction
+            msg.angular.z = self.ang_vel
+            self.vel_pub.publish(msg)
+
         msg.linear.x = self.lin_vel
+        msg.angular.z = self.ang_vel
         self.vel_pub.publish(msg)
 
 
