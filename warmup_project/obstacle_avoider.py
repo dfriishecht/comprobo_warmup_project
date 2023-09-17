@@ -36,14 +36,16 @@ class ObstacleAvoider(Node):
         self.obstacle_threshold = 1.0
         self.ang_direction = None
         self.task_finish = True
-        self.goal_angle = 90
+        self.goal_angle = 85
+        self.avoid_obstacle = False
+        self.rotated = False
+        self.turn_reset = False
 
     def get_angle(self, msg):
         """
         Get current neato angle
         """
         self.current_angle = rad2deg(acos(msg.pose.pose.orientation.w) * 2)
-        print(self.current_angle)
 
     def get_laser(self, msg):
         """
@@ -64,6 +66,7 @@ class ObstacleAvoider(Node):
 
         else:
             self.obstacle_detect = True
+            print("obstacle")
 
     def compare_side_dist(self):
         """
@@ -77,8 +80,25 @@ class ObstacleAvoider(Node):
     def rotate(self):
         if self.current_angle >= self.goal_angle:
             self.ang_vel = 0.0
+            print("turned")
+            self.rotated = True
         else:
             self.ang_vel = 0.3 * self.ang_direction
+
+    def obstacle_parallel(self):
+        if self.ang_direction == 1:
+            parallel_angle = self.dists["deg270"]
+        else:
+            parallel_angle = self.dists["deg90"]
+        if parallel_angle > self.obstacle_threshold:
+            self.ang_vel = -0.3
+            self.lin_vel = 0.0
+            self.goal_angle = 0.0
+            self.avoid_obstacle = True
+        else:
+            self.lin_vel = 0.3
+            self.ang_vel = 0.0
+            self.avoid_obstacle = False
 
     def run_loop(self):
         """
@@ -86,17 +106,29 @@ class ObstacleAvoider(Node):
         """
         msg = Twist()
         # first check in front of neato
-        if self.task_finish is True:
-            self.check_front_obstacle()
         if self.obstacle_detect is False:
+            self.check_front_obstacle()
             self.lin_vel = 0.3
-        if self.obstacle_detect:
+        if self.obstacle_detect is True:
             self.lin_vel = 0.0
+            self.rotated = False
             if self.task_finish is True:
                 self.compare_side_dist()
-            self.task_finish = False
-        if self.task_finish is False:
-            self.rotate()
+                print(self.ang_direction)
+                self.task_finish = False
+
+            if self.task_finish is False:
+                if self.avoid_obstacle is False:
+
+                    if self.rotated is False:
+                        self.rotate()
+                    if self.current_angle >= self.goal_angle:
+                        self.lin_vel = 0.3
+                        print("i have turned")
+                        self.obstacle_parallel()
+                else:
+                    if self.turn_reset is False:
+                        self.lin_vel = 0.3
 
         msg.linear.x = self.lin_vel
         msg.angular.z = self.ang_vel
