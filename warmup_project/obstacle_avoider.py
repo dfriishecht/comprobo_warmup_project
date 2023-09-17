@@ -5,6 +5,7 @@ from numpy import rad2deg
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry as Odom
+from time import sleep
 
 
 class ObstacleAvoider(Node):
@@ -46,6 +47,7 @@ class ObstacleAvoider(Node):
         Get current neato angle
         """
         self.current_angle = rad2deg(acos(msg.pose.pose.orientation.w) * 2)
+        print(self.current_angle)
 
     def get_laser(self, msg):
         """
@@ -85,14 +87,18 @@ class ObstacleAvoider(Node):
         else:
             self.ang_vel = 0.3 * self.ang_direction
 
+    def rotate_reset(self):
+        if self.current_angle <= 1 + self.goal_angle:
+            self.ang_vel = 0.0
+
     def obstacle_parallel(self):
         if self.ang_direction == 1:
             parallel_angle = self.dists["deg270"]
         else:
             parallel_angle = self.dists["deg90"]
         if parallel_angle > self.obstacle_threshold:
-            self.ang_vel = -0.3
-            self.lin_vel = 0.0
+            self.ang_vel = -0.6
+            self.lin_vel = 0.05
             self.goal_angle = 0.0
             self.avoid_obstacle = True
         else:
@@ -128,7 +134,9 @@ class ObstacleAvoider(Node):
                         self.obstacle_parallel()
                 else:
                     if self.turn_reset is False:
+                        self.rotate_reset()
                         self.lin_vel = 0.3
+                        self.task_finish = True
 
         msg.linear.x = self.lin_vel
         msg.angular.z = self.ang_vel
