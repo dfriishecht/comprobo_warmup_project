@@ -91,17 +91,57 @@ class ObstacleAvoider(Node):
                 until the Neato has cleared the obstacle. Upon clearing the
                 obstacle, the Neato slows down and rotates around the obstacle.
                 Once the obstacle has been avoided, avoid_obstacle is set to True.
+
         run_loop(self)
                 Executes the Node runtime loop and publishes the 'cmd_vel' topic.
                 While running the loop, run_loop also sets several conditionals to
                 ensure that only one portion of the loop is running at a given time.
                 This allows the various behaviors of the Neato to occur sequentially.
-
-
-
     """
 
     def __init__(self):
+        """
+        Constructs all required attributes for the ObstacleAvoider Node
+
+        Parameters:
+            laser_sub - subscription node
+            A node which subscribes to the 'laser' topic.
+        odom_sub - subscription node
+            A node which subscribes to the 'odom' topic.
+        vel_sub - publisher node
+            A node which publishes the 'cmd_vel' topic.
+        timer - timer node
+            A node which governs ObstacleAvoider's loop time.
+        current_angle - float
+            A variable which stores the Neato's current angle while it runs.
+        dists - dictionary
+            A dictionary representing the Neato's current distance from objects
+            directly in front of it as well as 90 degrees to the right and left.
+        obstacle_detect - boolean
+            A boolean indicating whether an obstacle has been detected.
+        lin_vel - float
+            A float representing the Neato's linear velocity.
+        ang_vel - float
+            A float representing the Neato's angular velocity.
+        obstacle_threshold - float
+            A float representing the maximum distance an obstacle can
+            be from a Neato before it detects it as an obstacle.
+        ang_direction - integer
+            An integer indicating the direction a Neato should turn when
+            avoiding an obstacle.
+        turn_determine - boolean
+            A boolean indicating if the Neato has yet to determine which direction to turn.
+        goal_angle = integer
+            An integer representing the ideal angle the Neato should turn whenever it
+            rotates.
+        avoid_obstacle - boolean
+            A boolean indicating if the Neato has finished avoiding the obstacle.
+        rotated - boolean
+            A boolean to check if the Neato has completed its first rotation.
+        turn_reset - boolean
+            A boolean to check if the Neato has completed rotating to its original
+            orientation.
+        """
         super().__init__("obstacle_avoider")
 
         self.laser_sub = self.create_subscription(
@@ -136,14 +176,23 @@ class ObstacleAvoider(Node):
 
     def get_angle(self, msg):
         """
-        Get current neato angle
+            Get the current angle of the Neato in degrees.
+        Args:
+            msg - subscriber node
+                Calls the odom_sub node to sample the Neato's
+                current angle.
         """
         self.current_angle = rad2deg(acos(msg.pose.pose.orientation.w) * 2)
         print(self.current_angle)
 
     def get_laser(self, msg):
         """
-        Get current neato laser data
+        Get the measured distances from Lidar scan angles
+            0, 90, and 270.
+        Args:
+            msg - subscriber node
+                Calls the laser_sub node to sample the Neato's
+                current laser scan data.
         """
         self.dists = {
             "deg0": msg.ranges[0],
@@ -153,7 +202,9 @@ class ObstacleAvoider(Node):
 
     def check_front_obstacle(self):
         """
-        Check for obstacle in front of neato
+        Checks for obstacles directly in front of the Neato.
+        If an obstacle is detected, self.obstacle_detect equals
+        True, otherwise it equals False.
         """
         if self.dists["deg0"] > self.obstacle_threshold or self.dists["deg0"] == 0.0:
             self.obstacle_detect = False
@@ -164,7 +215,9 @@ class ObstacleAvoider(Node):
 
     def compare_side_dist(self):
         """
-        Check for obstacle to the left and right of the neato
+        Compares the Neato's distance to obstacles on its direct
+        left and right. Based on the result, self.ang_direction
+        is either set to 1 or -1.
         """
         if self.dists["deg90"] >= self.dists["deg270"]:
             self.ang_direction = 1
@@ -172,6 +225,11 @@ class ObstacleAvoider(Node):
             self.ang_direction = -1
 
     def rotate(self):
+        """
+        Checks if the Neato has reached goal angle while rotating.
+        If the goal is not reached, the Neato continues to rotate.
+        Otherwise, the Neato's rotation is stopped.
+        """
         if self.current_angle >= self.goal_angle:
             self.ang_vel = 0.0
             print("turned")
@@ -180,11 +238,22 @@ class ObstacleAvoider(Node):
             self.ang_vel = 0.3 * self.ang_direction
 
     def rotate_reset(self):
+        """
+        Checks if the Neato has reset its rotation to its original
+        orientation. If it has, ang_vel is set to 0 and turn_reset
+        is set to True.
+        """
         if self.current_angle <= 1 + self.goal_angle:
             self.ang_vel = 0.0
             self.turn_reset = True
 
     def obstacle_parallel(self):
+        """
+        Drives the Neato parallel to the obstacle it is avoiding
+        until the Neato has cleared the obstacle. Upon clearing the
+        obstacle, the Neato slows down and rotates around the obstacle.
+        Once the obstacle has been avoided, avoid_obstacle is set to True.
+        """
         if self.ang_direction == 1:
             parallel_angle = self.dists["deg270"]
         else:
@@ -201,7 +270,10 @@ class ObstacleAvoider(Node):
 
     def run_loop(self):
         """
-        Executes the Node runtime loop and publishes the "cmd_vel" topic
+        Executes the Node runtime loop and publishes the 'cmd_vel' topic.
+        While running the loop, run_loop also sets several conditionals to
+        ensure that only one portion of the loop is running at a given time.
+        This allows the various behaviors of the Neato to occur sequentially.
         """
         msg = Twist()
         # first check in front of neato
@@ -238,6 +310,9 @@ class ObstacleAvoider(Node):
 
 
 def main():
+    """
+    Initializes and publishes the ObstacleAvoider Node
+    """
     rclpy.init()
     obstacle_publisher = ObstacleAvoider()
     rclpy.spin(obstacle_publisher)
